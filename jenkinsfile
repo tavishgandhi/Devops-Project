@@ -23,7 +23,15 @@ pipeline {
             }
         }
         
-
+        stage ('Sonarqube Analysis'){
+            steps{
+                 bat 'mvn sonar:sonar \
+                -Dsonar.projectKey=Sonar-calculator-code \
+                -Dsonar.host.url=http://localhost:9000 \
+                -Dsonar.login=f4c10b4cf38cf3f9b0d977d607523e0fe37806c8'   
+            }
+        }
+        
         stage('Docker image creation') {
             steps {
                 bat 'docker build -t tavishgandhi/assignment_five:devops-assignment-v1 .'
