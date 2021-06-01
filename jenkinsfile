@@ -1,0 +1,22 @@
+pipeline {
+    agent any
+    tools {
+        maven "MAVEN"
+        jdk "JAVA_HOME"
+    }
+    
+    stages {
+        stage('Build') {
+            steps {
+                bat 'mvn clean install'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sshagent(['Deploy-build-file']) {
+                    bat "scp -o StrictHostKeyChecking=no target\\FirstAssignment.war ec2-user@52.91.136.250:/opt/apache-tomcat-8.5.66/webapps"
+                }
+            }
+        }
+    }
+}
