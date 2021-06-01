@@ -23,12 +23,18 @@ pipeline {
             }
         }
         
+
         stage('Docker image creation') {
             steps {
                 bat 'docker build -t tavishgandhi/assignment_five:devops-assignment-v1 .'
             }
         }
-     
+        stage('Stop Running Container'){
+              steps{
+                    bat 'docker ps -qf name=tavishgandhi/assignment_five:devops-assignment-v1 | docker rm -f tavishgandhi/assignment_five:devops-assignment-v1'
+                }
+        }
+        
         stage('Publish image to Docker Hub') {
             steps {
                 script{
@@ -38,7 +44,6 @@ pipeline {
                 }
             }
         }
-              
         stage('Docker Based Deployment') {
             steps {
                 bat "docker run --name devops-assignment-container -d -p 8095:8080 tavishgandhi/assignment_five:devops-assignment-v1"
@@ -54,6 +59,7 @@ pipeline {
                     remote.password = 'password@123'
                     remote.allowAnyHosts = true
                     sshCommand remote: remote, command: " docker pull tavishgandhi/assignment_five:devops-assignment-v1"
+                    sshCommand remote: remote, command : "docker ps -qf name=tavishgandhi/assignment_five:devops-assignment-v1 | docker rm -f tavishgandhi/assignment_five:devops-assignment-v1"
                     sshCommand remote: remote, command: " docker run -d -p 8080:8080 tavishgandhi/assignment_five:devops-assignment-v1"
                 }
             }
