@@ -3,19 +3,45 @@ pipeline {
     tools {
         maven "MAVEN"
         jdk "JAVA_HOME"
+        
+    }
+    environment {                                      
+        registry = "tavishgandhi/assignment_five"
+        registryCredential = 'dockerhub'
     }
     
     stages {
+        stage ('Clone Code'){
+            steps{
+                git branch: 'main', url: 'https://github.com/tavishgandhi/Devops-Project.git'
+            }
+            
+        }
         stage('Build') {
             steps {
                 bat 'mvn clean install'
             }
         }
-        stage('Deploy') {
+        
+        stage('Docker image creation') {
             steps {
-                sshagent(['Deploy-build-file']) {
-                    bat "scp -o StrictHostKeyChecking=no target\\FirstAssignment.war ec2-user@52.91.136.250:/opt/apache-tomcat-8.5.66/webapps"
+                bat 'docker build -t tavishgandhi/assignment_five:devops-assignment-v1 .'
+            }
+        }
+     
+        stage('Publish image to Docker Hub') {
+            steps {
+                script{
+                    withDockerRegistry(credentialsId: 'dockerhub') {
+                    bat  'docker push tavishgandhi/assignment_five:devops-assignment-v1'
+                    }
                 }
+            }
+        }
+              
+        stage('Docker Based Deployment') {
+            steps {
+                bat "docker run --name devops-assignment-container -d -p 8095:8080 tavishgandhi/assignment_five:devops-assignment-v1"
             }
         }
     }
