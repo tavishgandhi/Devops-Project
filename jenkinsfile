@@ -44,5 +44,19 @@ pipeline {
                 bat "docker run --name devops-assignment-container -d -p 8095:8080 tavishgandhi/assignment_five:devops-assignment-v1"
             }
         }
+        stage('Run Docker conatainer on Ec2 Instance') {
+            steps{  
+                script{
+                    def remote = [:]
+                    remote.name = 'ec2-user'
+                    remote.host = '52.87.220.66'
+                    remote.user = 'Tavish'
+                    remote.password = 'password@123'
+                    remote.allowAnyHosts = true
+                    sshCommand remote: remote, command: " docker pull tavishgandhi/assignment_five:devops-assignment-v1"
+                    sshCommand remote: remote, command: " docker run -d -p 8080:8080 tavishgandhi/assignment_five:devops-assignment-v1"
+                }
+            }
+        }
     }
 }
