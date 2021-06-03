@@ -8,8 +8,8 @@ pipeline {
     environment {                                      
         registry = "tavishgandhi/assignment_five"
         registryCredential = 'dockerhub'
-        NAME = "tavishgandhi/assignment_five:devops-assignment"
-        VERSION = "${env.BUILD_NUMBER}"
+        NAME = "tavishgandhi/assignment_five"
+        VERSION = "devops_assignment-${env.BUILD_NUMBER}"
         IMAGE = "${NAME}:${VERSION}"
     }
     
@@ -49,7 +49,7 @@ pipeline {
             steps {
                 script{
                     withDockerRegistry(credentialsId: 'dockerhub') {
-                    bat  'docker push ${IMAGE}'
+                    bat "docker push ${IMAGE}"
                     }
                 }
             }
@@ -64,15 +64,16 @@ pipeline {
                 script{
                     def remote = [:]
                     remote.name = 'ec2-user'
-                    remote.host = '52.87.220.66'
+                    remote.host = '54.160.127.125'
                     remote.user = 'Tavish'
                     remote.password = 'password@123'
                     remote.allowAnyHosts = true
+                    sshCommand remote: remote, command: "docker ps -qf name=final-assignment-container | docker rm -f final-assignment-container"
                     sshCommand remote: remote, command: " docker pull ${IMAGE}"
-                    sshCommand remote: remote, command : "docker ps -qf name=final-assignment-container | docker rm -f final-assignment-container"
                     sshCommand remote: remote, command: " docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
                 }
             }
         }
     }
 }
+
