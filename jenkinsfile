@@ -5,7 +5,8 @@ pipeline {
         jdk "JAVA_HOME"
         
     }
-    environment {                                      
+    environment {     
+        SERVER_ID = 'artifactory-server'
         registry = "tavishgandhi/assignment_five"
         registryCredential = 'dockerhub'
         NAME = "tavishgandhi/assignment_five"
@@ -20,6 +21,15 @@ pipeline {
             }
             
         }
+        stage('Terraform infra creation'){
+            steps{
+                bat 'terraform init'
+                bat 'terraform apply --auto-approve'
+            }
+            environment{
+                IP_ADDR = bat 'terraform output instance_ip_addr'
+            }
+        }
         stage('Build') {
             steps {
                 bat 'mvn clean install'
@@ -32,6 +42,30 @@ pipeline {
                 -Dsonar.projectKey=Sonar-calculator-code \
                 -Dsonar.host.url=http://localhost:9000 \
                 -Dsonar.login=f4c10b4cf38cf3f9b0d977d607523e0fe37806c8'   
+            }
+        }
+        
+        stage("Upload artifact") {
+            steps {
+            rtUpload ( 
+            buildName: JOB_NAME,
+            buildNumber: BUILD_NUMBER,
+            serverId: SERVER_ID,
+                spec: '''{
+                    "files": [
+                            {
+                               "pattern": "target/*.war",
+                               "target": "Maven/"
+                             }
+                          ]
+                     }'''
+                )
+                  rtPublishBuildInfo (
+                     buildName: JOB_NAME,
+                     buildNumber: BUILD_NUMBER,
+                     serverId: SERVER_ID
+                 )
+                
             }
         }
         
@@ -64,16 +98,17 @@ pipeline {
                 script{
                     def remote = [:]
                     remote.name = 'ec2-user'
-                    remote.host = '54.160.127.125'
-                    remote.user = 'Tavish'
-                    remote.password = 'password@123'
+                    remote.host = ${IP_ADDR}
+                    withCredentials([usernamePassword(credentialsId: 'EC2-Terraform', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    remote.user = USERNAME
+                    remote.password = PASSWORD
                     remote.allowAnyHosts = true
                     sshCommand remote: remote, command: "docker ps -qf name=final-assignment-container | docker rm -f final-assignment-container"
                     sshCommand remote: remote, command: " docker pull ${IMAGE}"
                     sshCommand remote: remote, command: " docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
+                    }
                 }
             }
         }
     }
 }
-
