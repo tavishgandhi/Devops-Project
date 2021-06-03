@@ -35,7 +35,7 @@ resource "aws_instance" "web" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("Terraform-new.pem")
+      private_key = file("C:\\Users\\tavishgandhi\\OneDrive - Nagarro\\Desktop\\Terraform-new.pem")
       host        = aws_instance.web.public_ip
 
     }
