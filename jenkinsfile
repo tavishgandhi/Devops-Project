@@ -8,6 +8,9 @@ pipeline {
     environment {                                      
         registry = "tavishgandhi/assignment_five"
         registryCredential = 'dockerhub'
+        NAME = "tavishgandhi/assignment_five:devops-assignment"
+        VERSION = "${env.BUILD_NUMBER}"
+        IMAGE = "${NAME}:${VERSION}"
     }
     
     stages {
@@ -34,27 +37,26 @@ pipeline {
         
         stage('Docker image creation') {
             steps {
-                bat 'docker build -t tavishgandhi/assignment_five:devops-assignment-v1 .'
+                bat "docker build -t ${IMAGE} ."
             }
         }
         stage('Stop Running Container'){
               steps{
-                    bat 'docker ps -qf name=tavishgandhi/assignment_five:devops-assignment-v1 | docker rm -f tavishgandhi/assignment_five:devops-assignment-v1'
+                    bat 'docker ps -qf name=final-assignment-container | docker rm -f final-assignment-container'
                 }
         }
-        
         stage('Publish image to Docker Hub') {
             steps {
                 script{
                     withDockerRegistry(credentialsId: 'dockerhub') {
-                    bat  'docker push tavishgandhi/assignment_five:devops-assignment-v1'
+                    bat  'docker push ${IMAGE}'
                     }
                 }
             }
         }
         stage('Docker Based Deployment') {
             steps {
-                bat "docker run --name devops-assignment-container -d -p 8095:8080 tavishgandhi/assignment_five:devops-assignment-v1"
+                bat "docker run --name final-assignment-container -d -p 8095:8080 ${IMAGE}"
             }
         }
         stage('Run Docker conatainer on Ec2 Instance') {
@@ -66,9 +68,9 @@ pipeline {
                     remote.user = 'Tavish'
                     remote.password = 'password@123'
                     remote.allowAnyHosts = true
-                    sshCommand remote: remote, command: " docker pull tavishgandhi/assignment_five:devops-assignment-v1"
-                    sshCommand remote: remote, command : "docker ps -qf name=tavishgandhi/assignment_five:devops-assignment-v1 | docker rm -f tavishgandhi/assignment_five:devops-assignment-v1"
-                    sshCommand remote: remote, command: " docker run -d -p 8080:8080 tavishgandhi/assignment_five:devops-assignment-v1"
+                    sshCommand remote: remote, command: " docker pull ${IMAGE}"
+                    sshCommand remote: remote, command : "docker ps -qf name=final-assignment-container | docker rm -f final-assignment-container"
+                    sshCommand remote: remote, command: " docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
                 }
             }
         }
