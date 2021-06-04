@@ -95,18 +95,12 @@ pipeline {
         }
         stage('Run Docker conatainer on Ec2 Instance') {
             steps{  
-                script{
-                    def remote = [:]
-                    remote.name = 'ec2-user'
-                    remote.host = ${IP_ADDR}
-                    withCredentials([usernamePassword(credentialsId: 'EC2-Terraform', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    remote.user = USERNAME
-                    remote.password = PASSWORD
-                    remote.allowAnyHosts = true
-                    sshCommand remote: remote, command: "docker ps -qf name=final-assignment-container | docker rm -f final-assignment-container"
-                    sshCommand remote: remote, command: " docker pull ${IMAGE}"
-                    sshCommand remote: remote, command: " docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
-                    }
+                
+                withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'EC2-Terraform', \
+                                             keyFileVariable: 'SSH_KEY_FOR_EC2')]) {
+
+                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@13.233.3.253 -y docker pull ${IMAGE} ; docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
+                    
                 }
             }
         }
