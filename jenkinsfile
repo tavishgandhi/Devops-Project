@@ -99,7 +99,7 @@ pipeline {
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'EC2-Terraform', \
                                              keyFileVariable: 'SSH_KEY_FOR_EC2')]) {
 
-                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@13.233.3.253 -y docker pull ${IMAGE} ; docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
+                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@{IP_ADDR} -y docker pull ${IMAGE} ; docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
                     
                 }
             }
