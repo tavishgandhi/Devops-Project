@@ -21,15 +21,7 @@ pipeline {
             }
             
         }
-        stage('Terraform infra creation'){
-            steps{
-                bat 'terraform init'
-                bat 'terraform apply --auto-approve'
-            }
-            environment{
-                IP_ADDR = bat 'terraform output instance_ip_addr'
-            }
-        }
+        
         stage('Build') {
             steps {
                 bat 'mvn clean install'
@@ -54,8 +46,8 @@ pipeline {
                 spec: '''{
                     "files": [
                             {
-                               "pattern": "target/*.war",
-                               "target": "Maven/"
+                              "pattern": "target/*.war",
+                              "target": "Maven/"
                              }
                           ]
                      }'''
@@ -94,12 +86,21 @@ pipeline {
             }
         }
         stage('Run Docker conatainer on Ec2 Instance') {
+            
             steps{  
+                // bat 'terraform init'
+                bat 'terraform apply --auto-approve'
                 
+                script{
+                     env.IP_ADDR = bat(script: "@terraform output -raw instance_ip_addr", returnStdout: true).trim()
+                     
+                }
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'EC2-Terraform', \
                                              keyFileVariable: 'SSH_KEY_FOR_EC2')]) {
-
-                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@{IP_ADDR} -y docker pull ${IMAGE} ; docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
+                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@${IP_ADDR} -y docker pull ${IMAGE}"
+                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@${IP_ADDR} -y docker container stop final-assignment-container"
+                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@${IP_ADDR} -y docker container rm final-assignment-container"
+                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@${IP_ADDR} -y docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
                     
                 }
             }
