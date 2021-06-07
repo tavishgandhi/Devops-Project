@@ -89,7 +89,7 @@ pipeline {
             
             steps{  
                 // bat 'terraform init'
-                bat 'terraform apply --auto-approve'
+                //bat 'terraform apply --auto-approve'
                 
                 script{
                      env.IP_ADDR = bat(script: "@terraform output -raw instance_ip_addr", returnStdout: true).trim()
@@ -98,8 +98,7 @@ pipeline {
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'EC2-Terraform', \
                                              keyFileVariable: 'SSH_KEY_FOR_EC2')]) {
                     bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@${IP_ADDR} -y docker pull ${IMAGE}"
-                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@${IP_ADDR} -y docker container stop final-assignment-container"
-                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@${IP_ADDR} -y docker container rm final-assignment-container"
+                    bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@${IP_ADDR} -y docker container rm -f final-assignment-container || echo 'No Container'"
                     bat "ssh -i ${SSH_KEY_FOR_EC2} ec2-user@${IP_ADDR} -y docker run -d --name final-assignment-container -p 8080:8080 ${IMAGE}"
                     
                 }
